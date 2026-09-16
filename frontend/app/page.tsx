@@ -34,7 +34,7 @@ export default function LandingPage() {
   const [archives, setArchives] = useState<Archive[]>([]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/archives`)
+    fetch(`https://miss-tiffany-llc.onrender.com`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
