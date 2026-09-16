@@ -71,6 +71,10 @@ initDB();
 // ENDPOINT: LIVE STREAM MANAGEMENT
 // ==========================================
 
+app.get('/health', (_req, res) => {
+  res.json({ ok: true, service: 'backend' });
+});
+
 // Get current live stream status & info
 app.get('/api/live', async (req, res) => {
   try {

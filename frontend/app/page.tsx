@@ -9,6 +9,14 @@ import LivePlayer from '../components/LivePlayer';
 import { useState, useRef, useEffect } from 'react';
 import { Great_Vibes } from 'next/font/google';
 import Link from 'next/link';
+import { API_BASE_URL } from '../lib/api';
+
+type Archive = {
+  id: number;
+  title: string;
+  thumbnail_url: string | null;
+  createdat: string;
+};
 
 // Load the elegant cursive font
 const greatVibes = Great_Vibes({ 
@@ -23,10 +31,10 @@ const greatVibes = Great_Vibes({
 export default function LandingPage() {
 
   // VOD Offline Archives State & Fetch Hook
-  const [archives, setArchives] = useState<any[]>([]);
+  const [archives, setArchives] = useState<Archive[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/archives')
+    fetch(`${API_BASE_URL}/api/archives`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -41,10 +49,9 @@ export default function LandingPage() {
   const [isFlashing, setIsFlashing] = useState(false);
 
   // Live Stream Mock State
-  const [isLive, setIsLive] = useState(true); 
+  const [isLive, setIsLive] = useState(false);
 
   // Generic form states for the UI
-  const [email, setEmail] = useState('');
   const [status, setStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -371,7 +378,7 @@ export default function LandingPage() {
                 </form>
 
                 <p className="text-center text-xs text-neutral-500 mt-8">
-                  Don't have an account? <button onClick={() => handleViewChange('signup')} className="text-cyan-400 font-bold hover:underline">Sign Up</button>
+                  Don&apos;t have an account? <button onClick={() => handleViewChange('signup')} className="text-cyan-400 font-bold hover:underline">Sign Up</button>
                 </p>
               </div>
             )}
@@ -455,7 +462,7 @@ export default function LandingPage() {
             {/* VIEW: LIVE SHOWS & PAST ARCHIVES VOD GALLERY */}
             {currentView === 'live' && (
               <div className="space-y-10 w-full animate-fadeIn">
-                <LivePlayer/>
+                <LivePlayer onLiveChange={setIsLive} />
 
                 {/* Past Broadcasts & VOD Gallery Section */}
                 <div className="border-t border-neutral-800/80 pt-8">

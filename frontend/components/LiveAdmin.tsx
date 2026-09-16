@@ -2,6 +2,7 @@
 // Line 1
 'use client';
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../lib/api';
 
 export default function LiveAdmin() {
   const [title, setTitle] = useState('');
@@ -14,7 +15,7 @@ export default function LiveAdmin() {
 
   // Check if you are currently live when the panel loads
   useEffect(() => {
-    fetch('http://localhost:4000/api/live')
+    fetch(`${API_BASE_URL}/api/live`)
       .then(res => res.json())
       .then(data => {
         if (data && data.id) {
@@ -35,19 +36,20 @@ export default function LiveAdmin() {
     setStatusMessage('Uploading image to Supabase...');
 
     try {
-      const res = await fetch('http://localhost:4000/api/upload', {
+      const res = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
         body: formData,
       });
       const data = await res.json();
-      
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
       if (data.success) {
         setThumbnailUrl(data.url);
         setStatusMessage('Image uploaded successfully!');
       } else {
         setStatusMessage('Error: ' + data.error);
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Image upload failed:', error);
       setStatusMessage('Error connecting to upload server.');
     } finally {
       setUploading(false);
@@ -59,13 +61,13 @@ export default function LiveAdmin() {
     setStatusMessage('Starting stream...');
     
     try {
-      const res = await fetch('http://localhost:4000/api/live', {
+      const res = await fetch(`${API_BASE_URL}/api/live`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, embed_url: embedUrl, thumbnail_url: thumbnailUrl, is_live: true })
       });
       const data = await res.json();
-      
+      if (!res.ok) throw new Error(data.error || 'Could not start stream');
       if (data.success) {
         setStatusMessage('SUCCESS: You are LIVE!');
         setCurrentStreamId(data.stream.id);
@@ -74,7 +76,8 @@ export default function LiveAdmin() {
         setEmbedUrl('');
         setThumbnailUrl('');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Starting stream failed:', error);
       setStatusMessage('Error: Could not connect to backend.');
     }
   };
@@ -84,16 +87,17 @@ export default function LiveAdmin() {
     setStatusMessage('Ending broadcast...');
     
     try {
-      const res = await fetch(`http://localhost:4000/api/live/${currentStreamId}/end`, {
+      const res = await fetch(`${API_BASE_URL}/api/live/${currentStreamId}/end`, {
         method: 'PATCH'
       });
       const data = await res.json();
-      
+      if (!res.ok) throw new Error(data.error || 'Could not end stream');
       if (data.success) {
         setStatusMessage('Broadcast ended successfully. Site is offline.');
         setIsLive(false);
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Ending stream failed:', error);
       setStatusMessage('Error ending stream.');
     }
   };
