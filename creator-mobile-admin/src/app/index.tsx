@@ -47,7 +47,7 @@ export default function AdminScreen() {
         name: `${Date.now()}-mobile-capture.jpg`,
       });
 
-      const res = await fetch(`${API_BASE_URL}/api/upload`, {
+      const res = await fetch(`https://miss-tiffany-llc.onrender.com`, {
         method: 'POST',
         body: formData,
       });
@@ -98,7 +98,7 @@ export default function AdminScreen() {
   const handleEndStream = async () => {
     if (!currentStreamId) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/live/${currentStreamId}/end`, {
+      const res = await fetch(`https://miss-tiffany-llc.onrender.com`, {
         method: 'PATCH'
       });
       const data = await res.json();
