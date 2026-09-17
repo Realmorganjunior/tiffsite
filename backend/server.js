@@ -208,6 +208,21 @@ app.post('/api/waitlist', async (req, res) => {
 });
 
 
+
+// Line # (Paste this right above your app.listen line near the bottom of the file)
+// start where I paste
+app.post('/api/approve-user', async (req, res) => {
+    const { email } = req.body;
+    try {
+        await pool.query('UPDATE "user" SET status = $1 WHERE email = $2', ['approved', email]);
+        res.json({ success: true, message: 'User approved!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to approve user' });
+    }
+});
+// end where I end the copy and paste
+
 // ==========================================
 // WAYPOINT: SERVER LISTENER START
 // ==========================================
