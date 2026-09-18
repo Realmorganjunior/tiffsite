@@ -5,6 +5,12 @@
 // WAYPOINT: IMPORTS & FONTS
 // ==========================================
 'use client';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// end where I end the copy and paste
 import LivePlayer from '../components/LivePlayer';
 import { useState, useRef, useEffect } from 'react';
 import { Great_Vibes } from 'next/font/google';
@@ -66,18 +72,88 @@ export default function LandingPage() {
   // ==========================================
 
   // Generic Mock Submit (works for waitlist, login, and signup)
-  const handleMockSubmit = (event: React.FormEvent, successMessage: string) => {
-    event.preventDefault();
+  // Line #: Replace your existing "const handleMockSubmit = ..." block completely with this
+// start where I paste
+  const handleSignup = async (e) => {
+    e.preventDefault();
     setIsSubmitting(true);
-    setStatus('Processing...');
+    setStatus('Creating Account...');
     setIsSuccess(false);
 
-    setTimeout(() => {
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+
+    // 1. Create secure Auth account
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      setStatus(error.message);
       setIsSubmitting(false);
-      setIsSuccess(true);
-      setStatus(successMessage);
-    }, 1500);
+      return;
+    }
+
+    // 2. Add to public user table as 'pending'
+    await supabase.from('user').insert([
+      { email: email, status: 'pending' }
+    ]);
+
+    setStatus('🎉 Account Created! Pending Admin Approval.');
+    setIsSuccess(true);
+    setIsSubmitting(false);
+    e.target.reset(); // Clear the form
   };
+
+ // Line 110: Replace your current "const handleLogin = ..." block completely
+// start where I paste
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setStatus('Authenticating...');
+    setIsSuccess(false);
+
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+
+    // 1. Verify password FIRST (this creates a secure session)
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (authError) {
+      setStatus(authError.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 2. THE STRICT ROADBLOCK: Now check their explicit status in your table
+    const { data: userData, error: userError } = await supabase
+      .from('user')
+      .select('status')
+      .eq('email', email)
+      .single();
+
+    // 3. If we can't find an explicit 'approved' status, kick them out
+    if (userError || !userData || userData.status === 'pending') {
+      await supabase.auth.signOut(); // Immediately destroy their session
+      setStatus('Account is pending Admin approval.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 4. If they are officially approved, let them through!
+    setStatus('✅ Login Successful! Redirecting...');
+    setIsSuccess(true);
+    setIsSubmitting(false);
+    
+    setTimeout(() => {
+      handleViewChange('video');
+    }, 1000);
+  };
+//end where I end the copy and paste
 
   // Handle switching views and triggering CRT TV static effects
   const handleViewChange = (view: 'home' | 'pg' | 'video' | 'live' | 'login' | 'signup') => {
@@ -353,17 +429,19 @@ export default function LandingPage() {
                   <p className="text-neutral-400 text-sm">Enter your credentials to access your account.</p>
                 </div>
 
-                <form onSubmit={(e) => handleMockSubmit(e, '✅ Login Successful! Redirecting...')} className="space-y-4">
+                // Line #: Find your LOG IN VIEW <form> block and replace it
+// start where I paste
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Username / Email</label>
-                    <input type="text" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none text-sm transition-all" />
+                    <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Email</label>
+                    <input name="email" type="email" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none text-sm transition-all" />
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
                       <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider">Password</label>
                       <button type="button" className="text-[10px] text-pink-400 hover:text-pink-300">Forgot?</button>
                     </div>
-                    <input type="password" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none text-sm transition-all" />
+                    <input name="password" type="password" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none text-sm transition-all" />
                   </div>
                   
                   <button type="submit" disabled={isSubmitting} className="w-full mt-2 py-3.5 bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-500 hover:to-pink-600 transition-all rounded-xl font-bold text-white text-sm shadow-[0_0_20px_rgba(236,72,153,0.3)] disabled:opacity-50">
@@ -376,6 +454,7 @@ export default function LandingPage() {
                     </div>
                   )}
                 </form>
+// end where I end the copy and paste
 
                 <p className="text-center text-xs text-neutral-500 mt-8">
                   Don&apos;t have an account? <button onClick={() => handleViewChange('signup')} className="text-cyan-400 font-bold hover:underline">Sign Up</button>
@@ -391,21 +470,23 @@ export default function LandingPage() {
                   <p className="text-neutral-400 text-sm">Join the exclusive inner circle.</p>
                 </div>
 
-                <form onSubmit={(e) => handleMockSubmit(e, '🎉 Account Created! Welcome to the club.')} className="space-y-4">
+                // Line #: Find your SIGN UP VIEW <form> block and replace it
+// start where I paste
+                <form onSubmit={handleSignup} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Username</label>
-                      <input type="text" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none text-sm transition-all" />
+                      <input name="username" type="text" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none text-sm transition-all" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Email</label>
-                      <input type="email" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none text-sm transition-all" />
+                      <input name="email" type="email" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none text-sm transition-all" />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Password</label>
-                    <input type="password" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none text-sm transition-all" />
+                    <input name="password" type="password" required disabled={isSubmitting} className="w-full px-4 py-3 rounded-xl bg-neutral-950/70 border border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none text-sm transition-all" />
                   </div>
 
                   <div>
@@ -436,6 +517,7 @@ export default function LandingPage() {
                     </div>
                   )}
                 </form>
+// end where I end the copy and paste
 
                 <p className="text-center text-xs text-neutral-500 mt-6">
                   Already have an account? <button onClick={() => handleViewChange('login')} className="text-pink-400 font-bold hover:underline">Log In</button>
