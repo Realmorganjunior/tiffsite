@@ -7,12 +7,13 @@
 'use client';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // end where I end the copy and paste
 import LivePlayer from '../components/LivePlayer';
 import { useState, useRef, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { Great_Vibes } from 'next/font/google';
 import Link from 'next/link';
 import { API_BASE_URL } from '../lib/api';
@@ -74,14 +75,15 @@ export default function LandingPage() {
   // Generic Mock Submit (works for waitlist, login, and signup)
   // Line #: Replace your existing "const handleMockSubmit = ..." block completely with this
 // start where I paste
-  const handleSignup = async (e) => {
+  const handleSignup = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setStatus('Creating Account...');
     setIsSuccess(false);
 
-    const email = e.target.email.value;
-    const password = e.target.password.value;
+    const form = e.currentTarget;
+    const email = new FormData(form).get('email')?.toString() ?? '';
+    const password = new FormData(form).get('password')?.toString() ?? '';
 
     // 1. Create secure Auth account
     const { data, error } = await supabase.auth.signUp({
@@ -103,19 +105,37 @@ export default function LandingPage() {
     setStatus('🎉 Account Created! Pending Admin Approval.');
     setIsSuccess(true);
     setIsSubmitting(false);
-    e.target.reset(); // Clear the form
+    form.reset(); // Clear the form
+  };
+
+  const handleMockSubmit = async (
+    e: FormEvent<HTMLFormElement>,
+    successMessage: string,
+  ) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setStatus('Submitting...');
+    setIsSuccess(false);
+
+    await new Promise((resolve) => setTimeout(resolve, 700));
+
+    setStatus(successMessage);
+    setIsSuccess(true);
+    setIsSubmitting(false);
+    e.currentTarget.reset();
   };
 
  // Line 110: Replace your current "const handleLogin = ..." block completely
 // start where I paste
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setStatus('Authenticating...');
     setIsSuccess(false);
 
-    const email = e.target.email.value;
-    const password = e.target.password.value;
+    const form = e.currentTarget;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
 
     // 1. Verify password FIRST (this creates a secure session)
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -429,8 +449,6 @@ export default function LandingPage() {
                   <p className="text-neutral-400 text-sm">Enter your credentials to access your account.</p>
                 </div>
 
-                // Line #: Find your LOG IN VIEW <form> block and replace it
-// start where I paste
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Email</label>
@@ -454,7 +472,6 @@ export default function LandingPage() {
                     </div>
                   )}
                 </form>
-// end where I end the copy and paste
 
                 <p className="text-center text-xs text-neutral-500 mt-8">
                   Don&apos;t have an account? <button onClick={() => handleViewChange('signup')} className="text-cyan-400 font-bold hover:underline">Sign Up</button>
@@ -470,8 +487,6 @@ export default function LandingPage() {
                   <p className="text-neutral-400 text-sm">Join the exclusive inner circle.</p>
                 </div>
 
-                // Line #: Find your SIGN UP VIEW <form> block and replace it
-// start where I paste
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -517,7 +532,6 @@ export default function LandingPage() {
                     </div>
                   )}
                 </form>
-// end where I end the copy and paste
 
                 <p className="text-center text-xs text-neutral-500 mt-6">
                   Already have an account? <button onClick={() => handleViewChange('login')} className="text-pink-400 font-bold hover:underline">Log In</button>
